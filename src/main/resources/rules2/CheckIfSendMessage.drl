@@ -1,0 +1,66 @@
+package rules2;
+dialect  "java"
+import com.wjpspace.droolstemplete.entity.Person
+import com.wjpspace.droolstemplete.common.enums.BusinessStepEnum
+
+function boolean out(java.lang.Integer step){
+ return 1==step
+                || BusinessStepEnum.CREDIT_2.equals(step) || BusinessStepEnum.CREDIT_3.equals(step)
+                || BusinessStepEnum.CREDIT_4.equals(step);
+}
+
+rule "step_stop"
+    no-loop true
+    salience 980
+    when
+    p:Person(currentStep==BusinessStepEnum.REFUSED.value)
+then
+    p.setValid(false);
+    retract(p)
+end
+
+//当前步骤已完成
+rule "step_finish"
+    no-loop true
+    salience 970
+when
+    p:Person(
+    (BusinessStepEnum.REGISTER.value.equals(step) && currentStep.compareTo(step) > 0)
+    ||(BusinessStepEnum.DECISION_APPLY.value.compareTo(step) <= 0 && currentStep.compareTo(step) > 0)
+    ||(out(step) && currentStep.compareTo(step) > 0 && !out(currentStep))
+    )
+then
+    p.setValid(false);
+    System.out.println(p.getId());
+    retract(p)
+end
+
+//授信是内部超时，不是因为用户不操作
+rule "onDeciding"
+    no-loop true
+    salience 960
+when
+    p:Person(BusinessStepEnum.DECISION_APPLY.value.equals(currentStep))
+   then
+     p.setValid(false);
+       retract(p)
+    end
+
+rule "ageRule"
+    no-loop true
+    salience 960
+    when
+    p:Person(age<20||age>50)
+    then
+    p.setValid(false);
+    retract(p)
+end
+
+rule "setfalse"
+no-loop true
+salience 888
+when
+p:Person()
+then
+p.setValid(true);
+  end

@@ -1,0 +1,38 @@
+package rules;
+dialect  "java"
+import com.wjpspace.droolstemplete.entity.Person
+import com.wjpspace.droolstemplete.common.enums.BusinessStepEnum
+
+
+rule "step_doneed_push"
+no-loop true
+salience 999
+    when
+//    排除不需要判断的人员进行
+    p:Person(step != BusinessStepEnum.CREDIT_2.value
+    && step != BusinessStepEnum.CREDIT_3.value
+    && step != BusinessStepEnum.CREDIT_4.value
+    && step != BusinessStepEnum.APPLY_ORDER_1.value
+    && step != BusinessStepEnum.REFUSED.value
+    )
+    then
+    p.setValid(true);
+    System.out.println("当前状态需要被放到延时队列"+p);
+    retract(p)
+end
+
+
+rule "setfalse"
+no-loop true
+salience 888
+when
+p:Person()
+then
+p.setValid(false);
+  end
+
+
+
+
+
+

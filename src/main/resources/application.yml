@@ -1,0 +1,33 @@
+server:
+  port: 8888
+
+#定时任务开关
+scheduling:
+  enabled: false
+
+spring:
+  datasource:
+    url: jdbc:mysql://10.139.60.82:3306/test?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=GMT%2B8
+    username: root
+    password: root123
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+mybatis-plus:
+  type-aliases-package: com.wjpspace.droolstemplete.entity
+  mapper-locations: "classpath:mappers/**/*Mapper.xml"
+  configuration:
+    map-underscore-to-camel-case: true
+    jdbc-type-for-null: null
+    cache-enabled: false
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto
+      workerId: ${workerId}
+      datacenterId: ${datacenterId}
+      capital-mode: true
+      field-strategy: not_empty
+      logic-delete-value: 0
+      logic-not-delete-value: 1
+      db-type: mysql
+

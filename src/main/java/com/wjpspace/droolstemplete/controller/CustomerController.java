@@ -16,10 +16,17 @@ public class CustomerController {
     private CustomerService customerService;
 
 
+    /**
+     * 本地规则文件
+     */
     @GetMapping("/go")
     public void go() {
         customerService.go();
     }
+
+    /**
+     * 远程规则文件
+     */
     @GetMapping("/go2")
     public void go2() {
         customerService.go2();

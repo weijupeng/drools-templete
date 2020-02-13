@@ -5,10 +5,13 @@ package com.wjpspace.droolstemplete.service;
  * @date 2020/1/20 16:12
  */
 public interface CustomerService {
-
-    void addUser();
-
+    /**
+     * 本地调用
+     */
     void go();
 
+    /**
+     * 远程调用
+     */
     void go2();
 }

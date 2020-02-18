@@ -10,8 +10,4 @@ public interface CustomerService {
      */
     void go();
 
-    /**
-     * 远程调用
-     */
-    void go2();
 }

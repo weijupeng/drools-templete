@@ -1,6 +1,7 @@
 package com.wjpspace.droolstemplete.controller;
 
 import com.wjpspace.droolstemplete.service.CustomerService;
+import com.wjpspace.droolstemplete.service.RemoteCustomerService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -15,20 +16,33 @@ public class CustomerController {
     @Resource
     private CustomerService customerService;
 
+    @Resource
+    private RemoteCustomerService remoteCustomerService;
+
 
     /**
      * 本地规则文件
      */
     @GetMapping("/go")
-    public void go() {
-        customerService.go();
+    public String go() {
+        try {
+            customerService.go();
+        } catch (Exception e) {
+            return "false";
+        }
+        return "Success";
     }
 
     /**
      * 远程规则文件
      */
     @GetMapping("/go2")
-    public void go2() {
-        customerService.go2();
+    public String go2() {
+        try {
+            remoteCustomerService.go2();
+        } catch (Exception e) {
+            return "false";
+        }
+        return "Success";
     }
 }

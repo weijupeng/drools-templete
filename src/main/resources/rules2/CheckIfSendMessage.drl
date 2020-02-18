@@ -4,11 +4,12 @@ import com.wjpspace.droolstemplete.entity.Person
 import com.wjpspace.droolstemplete.common.enums.BusinessStepEnum
 
 function boolean out(java.lang.Integer step){
- return 1==step
-                || BusinessStepEnum.CREDIT_2.equals(step) || BusinessStepEnum.CREDIT_3.equals(step)
+ return BusinessStepEnum.CREDIT_1.getValue().equals(step)|| BusinessStepEnum.CREDIT_2.equals(step)
+                || BusinessStepEnum.CREDIT_3.equals(step)
                 || BusinessStepEnum.CREDIT_4.equals(step);
 }
 
+// 流程终止
 rule "step_stop"
     no-loop true
     salience 980
@@ -25,7 +26,9 @@ rule "step_finish"
     salience 970
 when
     p:Person(
+    //之前步骤是注册 当前状态大于注册的
     (BusinessStepEnum.REGISTER.value.equals(step) && currentStep.compareTo(step) > 0)
+    //之前状态处在进入决策阶段或决策出额状态，没有进行下一步的
     ||(BusinessStepEnum.DECISION_APPLY.value.compareTo(step) <= 0 && currentStep.compareTo(step) > 0)
     ||(out(step) && currentStep.compareTo(step) > 0 && !out(currentStep))
     )
@@ -44,11 +47,11 @@ when
    then
      p.setValid(false);
        retract(p)
-    end
+end
 
 rule "ageRule"
     no-loop true
-    salience 960
+    salience 950
     when
     p:Person(age<20||age>50)
     then
@@ -57,10 +60,10 @@ rule "ageRule"
 end
 
 rule "setfalse"
-no-loop true
-salience 888
+    no-loop true
+    salience 888
 when
-p:Person()
+    p:Person()
 then
-p.setValid(true);
-  end
+    p.setValid(true);
+end

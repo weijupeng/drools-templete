@@ -8,11 +8,14 @@ rule "step_doneed_push"
 no-loop true
 salience 999
     when
-//    排除不需要判断的人员进行
+    //排除不需要判断的人员进行
+    //在授信，但不是第一步
     p:Person(step != BusinessStepEnum.CREDIT_2.value
     && step != BusinessStepEnum.CREDIT_3.value
     && step != BusinessStepEnum.CREDIT_4.value
+    //提现完成
     && step != BusinessStepEnum.APPLY_ORDER_1.value
+    //最终拒绝
     && step != BusinessStepEnum.REFUSED.value
     )
     then

@@ -97,6 +97,7 @@ public class RemoteCustomerServiceImpl extends AbstractService implements Remote
         RuleServicesClient client = getRuleServicesClient();
         KieCommands cmdFactory = KieServices.Factory.get().getCommands();
 
+
         //遍历数据并匹配第二个规则文件
         for (Person person : personList) {
 
@@ -126,18 +127,18 @@ public class RemoteCustomerServiceImpl extends AbstractService implements Remote
 
     /**
      * 获取规则执行完的结果
-     * @param rules
+     * @param client
      * @param cmdFactory
      * @param person
-     * @param kieSessionId2
+     * @param kieSessionId
      * @return
      */
-    private Person getPerson(RuleServicesClient rules, KieCommands cmdFactory, Person person, String kieSessionId2) {
-        List<Command<?>> commands = new LinkedList<Command<?>>();
+    private Person getPerson(RuleServicesClient client, KieCommands cmdFactory, Person person, String kieSessionId) {
+        List<Command<?>> commands = new LinkedList<>();
         commands.add(cmdFactory.newInsert(person, "person"));
         commands.add(cmdFactory.newFireAllRules());
-        ServiceResponse<ExecutionResults> response = rules.executeCommandsWithResults(KIE_CONTAINER_ID,
-                cmdFactory.newBatchExecution(commands, kieSessionId2));
+        ServiceResponse<ExecutionResults> response = client.executeCommandsWithResults(KIE_CONTAINER_ID,
+                cmdFactory.newBatchExecution(commands, kieSessionId));
 
         ExecutionResults result = response.getResult();
         return (Person) result.getValue("person");

@@ -28,6 +28,7 @@ public class CustomerController {
         try {
             customerService.go();
         } catch (Exception e) {
+            e.printStackTrace();
             return "false";
         }
         return "Success";
@@ -41,6 +42,7 @@ public class CustomerController {
         try {
             remoteCustomerService.go2();
         } catch (Exception e) {
+             e.printStackTrace();
             return "false";
         }
         return "Success";

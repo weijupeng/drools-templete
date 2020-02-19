@@ -1,8 +1,15 @@
 package rules;
 dialect  "java"
-import com.wjpspace.droolstemplete.entity.Person
+//import com.wjpspace.droolstemplete.entity.Person
 import com.wjpspace.droolstemplete.common.enums.BusinessStepEnum
-
+declare Person
+    name : String
+	age : int
+	id : Long
+    valid : Boolean
+    step : Integer
+    currentStep : Integer
+end
 
 rule "step_doneed_push"
 no-loop true

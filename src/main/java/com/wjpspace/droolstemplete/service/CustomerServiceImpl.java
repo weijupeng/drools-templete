@@ -5,8 +5,8 @@ import com.wjpspace.droolstemplete.entity.Customer;
 import com.wjpspace.droolstemplete.entity.Person;
 import lombok.extern.slf4j.Slf4j;
 import org.kie.api.KieServices;
+import org.kie.api.definition.type.FactType;
 import org.kie.api.runtime.KieSession;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -41,18 +41,31 @@ public class CustomerServiceImpl extends AbstractService implements CustomerServ
 
         //遍历原始数据匹配规则
         for (Customer customer : customerList) {
+            FactType factType = kieSession.getKieBase().getFactType("rules", "Person");
+            Object person = null;
+            try {
+                person = factType.newInstance();
+                factType.set(person, "step", customer.getStatus());
+                factType.set(person, "id", customer.getId());
+            } catch (InstantiationException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
+
+
             //转换成数据实体
-            Person person = new Person();
-            BeanUtils.copyProperties(customer, person);
-            person.setStep(customer.getStatus());
+//            Person person = new Person();
+//            BeanUtils.copyProperties(customer, person);
+//            person.setStep(customer.getStatus());
 
             //执行规则并拿到结果
             kieSession.insert(person);
             kieSession.fireAllRules();
 
             //符合规则1的加入到集合，准备进行第二遍规则匹配
-            if (person.getValid()) {
-                Customer c = customerList.stream().filter(customer1 -> customer1.getId().equals(person.getId())).collect(Collectors.toList()).get(0);
+
+            if ((boolean)(factType.get(person, "valid"))){
+                Object id = factType.get(person, "id");
+                Customer c = customerList.stream().filter(customer1 -> customer1.getId().equals((Long)id)).collect(Collectors.toList()).get(0);
                 customers.add(c);
             }
         }
@@ -86,14 +99,6 @@ public class CustomerServiceImpl extends AbstractService implements CustomerServ
         System.out.println("需要被推送到电销系统的是：");
         System.out.println(idList);
     }
-
-
-
-
-
-
-
-
 
 
 }

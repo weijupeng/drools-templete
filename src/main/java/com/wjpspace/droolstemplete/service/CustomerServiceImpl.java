@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.kie.api.KieServices;
 import org.kie.api.definition.type.FactType;
 import org.kie.api.runtime.KieSession;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -31,7 +32,7 @@ public class CustomerServiceImpl extends AbstractService implements CustomerServ
      */
     @Override
     public void go() {
-        ArrayList<Customer> customers = new ArrayList<>();
+        ArrayList<Person> personArrayList = new ArrayList<>();
         //获取原始数据
         List<Customer> customerList = customerDao.getAllCustomers();
 
@@ -41,21 +42,21 @@ public class CustomerServiceImpl extends AbstractService implements CustomerServ
 
         //遍历原始数据匹配规则
         for (Customer customer : customerList) {
-            FactType factType = kieSession.getKieBase().getFactType("rules", "Person");
-            Object person = null;
-            try {
-                person = factType.newInstance();
-                factType.set(person, "step", customer.getStatus());
-                factType.set(person, "id", customer.getId());
-            } catch (InstantiationException | IllegalAccessException e) {
-                e.printStackTrace();
-            }
+//            FactType factType = kieSession.getKieBase().getFactType("rules", "Person");
+//            Object person = null;
+//            try {
+//                person = factType.newInstance();
+//                factType.set(person, "step", customer.getStatus());
+//                factType.set(person, "id", customer.getId());
+//            } catch (InstantiationException | IllegalAccessException e) {
+//                e.printStackTrace();
+//            }
 
 
             //转换成数据实体
-//            Person person = new Person();
-//            BeanUtils.copyProperties(customer, person);
-//            person.setStep(customer.getStatus());
+            Person person = new Person();
+            BeanUtils.copyProperties(customer, person);
+            person.setStep(customer.getStatus());
 
             //执行规则并拿到结果
             kieSession.insert(person);
@@ -63,20 +64,18 @@ public class CustomerServiceImpl extends AbstractService implements CustomerServ
 
             //符合规则1的加入到集合，准备进行第二遍规则匹配
 
-            if ((boolean)(factType.get(person, "valid"))){
-                Object id = factType.get(person, "id");
-                Customer c = customerList.stream().filter(customer1 -> customer1.getId().equals((Long)id)).collect(Collectors.toList()).get(0);
-                customers.add(c);
+            if (person.getValid()){
+                personArrayList.add(person);
             }
         }
 
         //进行第二遍规则匹配
-        sendMessage(customers);
+        sendMessage(personArrayList);
     }
 
-    private void sendMessage(List<Customer> customers) {
+    private void sendMessage(List<Person> people) {
         //随机对数据进行改变
-        List<Person> personList = changeCustomerStep(customers);
+        List<Person> personList = changeCustomerStep(people);
         //
         if (CollectionUtils.isEmpty(personList)) {
             System.out.println("当前无数据可做规则校验修改");

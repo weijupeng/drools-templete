@@ -19,7 +19,9 @@ public class Person implements java.io.Serializable {
 
 
     /**
-     * 是否需要推送到电销  true需要 false不需要
+     * 是否需要进行下一步操作
+     * 第一个规则文件执行完为true表示通过第一个规则文件 需要执行第二个规则文件
+     * 第二个规则文件执行完为true表示需要被推送到电销
      */
     private Boolean valid;
 

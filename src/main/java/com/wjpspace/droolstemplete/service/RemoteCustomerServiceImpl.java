@@ -15,7 +15,6 @@ import org.kie.server.client.KieServicesFactory;
 import org.kie.server.client.RuleServicesClient;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
@@ -49,68 +48,80 @@ public class RemoteCustomerServiceImpl extends AbstractService implements Remote
 
     @Override
     public void go2() {
-        //获取远程连接
-        RuleServicesClient client = getRuleServicesClient();
-        KieCommands cmdFactory = KieServices.Factory.get().getCommands();
 
         //获取原始数据
         List<Customer> customerList = customerDao.getAllCustomers();
 
-        //创建接收
-        ArrayList<Customer> customers = new ArrayList<>();
-
-        //遍历数据并匹配第一个规则文件
-        for (Customer customer : customerList) {
-
+        //转换实体数据
+        List<Person> personList = customerList.stream().map(customer -> {
             Person person = new Person();
             BeanUtils.copyProperties(customer, person);
             person.setStep(customer.getStatus());
+            return person;
+        }).collect(Collectors.toList());
 
-            //执行规则并获取执行结果
-            Person person2 = getPerson(client, cmdFactory, person, KIE_SESSION_ID);
+        ExecutionResults result = getExecutionResults(personList, KIE_SESSION_ID);
 
-            //满足规则的加入到集合中准备第二个规则文件的匹配
-            if (person2.getValid()) {
-                Customer c = customerList.stream().filter(customer1 ->
-                        person2.getId().equals(customer1.getId())
-                ).collect(Collectors.toList()).get(0);
-                customers.add(c);
+        //创建接收
+        ArrayList<Person> customers = new ArrayList<>();
+
+        for (int i = 0; i < personList.size(); i++) {
+            Person value = (Person) result.getValue("person" + i);
+            if (value.getValid()) {
+                customers.add(value);
             }
         }
+
         //匹配第二个规则文件
-        sendMessage2(customers);
+        checkRules2(customers);
     }
 
-    private void sendMessage2(ArrayList<Customer> customers) {
+
+    /**
+     * 执行规则文件2
+     * @param people 通过文件1的用户
+     */
+    private void checkRules2(ArrayList<Person> people) {
         //随机改变数据对象，给对象加上当前状态
-        List<Person> personList = changeCustomerStep(customers);
+        List<Person> personList = changeCustomerStep(people);
+
+        //执行规则并获取结果
+        ExecutionResults result = getExecutionResults(personList, KIE_SESSION_ID2);
 
         //创建接收
         ArrayList<Long> idList = new ArrayList<>();
-
-        if (CollectionUtils.isEmpty(personList)) {
-            System.out.println("当前无数据可做规则校验修改");
-            throw new RuntimeException("当前无数据可做规则校验修改");
+        for (int i = 0; i < personList.size(); i++) {
+            Person value = (Person) result.getValue("person" + i);
+            if (value.getValid()) {
+                idList.add(value.getId());
+            }
         }
 
+        System.out.println("需要被推送到电销系统的是：");
+        System.out.println(idList);
+    }
+
+
+    /**
+     * 批量进行规则运算
+     * @param personList   用户列表
+     * @param kieSessionId kieSessionId
+     * @return ExecutionResults
+     */
+    private ExecutionResults getExecutionResults(List<Person> personList, String kieSessionId) {
         //获取远程连接
         RuleServicesClient client = getRuleServicesClient();
         KieCommands cmdFactory = KieServices.Factory.get().getCommands();
 
-
-        //遍历数据并匹配第二个规则文件
-        for (Person person : personList) {
-
-
-            //执行第二个规则文件并获取结果
-            Person person2 = getPerson(client, cmdFactory, person, KIE_SESSION_ID2);
-            //满足规则文件的加入到ID集合中
-            if (person2.getValid()) {
-                idList.add(person.getId());
-            }
+        List<Command<?>> commands = new LinkedList<>();
+        for (int i = 0; i < personList.size(); i++) {
+            commands.add(cmdFactory.newInsert(personList.get(i), "person" + i));
         }
-        System.out.println("需要被推送到电销系统的是：");
-        System.out.println(idList);
+        commands.add(cmdFactory.newFireAllRules());
+        ServiceResponse<ExecutionResults> response = client.executeCommandsWithResults(KIE_CONTAINER_ID,
+                cmdFactory.newBatchExecution(commands, kieSessionId));
+
+        return response.getResult();
     }
 
     /**
@@ -125,22 +136,5 @@ public class RemoteCustomerServiceImpl extends AbstractService implements Remote
         return client.getServicesClient(RuleServicesClient.class);
     }
 
-    /**
-     * 获取规则执行完的结果
-     * @param client
-     * @param cmdFactory
-     * @param person
-     * @param kieSessionId
-     * @return
-     */
-    private Person getPerson(RuleServicesClient client, KieCommands cmdFactory, Person person, String kieSessionId) {
-        List<Command<?>> commands = new LinkedList<>();
-        commands.add(cmdFactory.newInsert(person, "person"));
-        commands.add(cmdFactory.newFireAllRules());
-        ServiceResponse<ExecutionResults> response = client.executeCommandsWithResults(KIE_CONTAINER_ID,
-                cmdFactory.newBatchExecution(commands, kieSessionId));
 
-        ExecutionResults result = response.getResult();
-        return (Person) result.getValue("person");
-    }
 }

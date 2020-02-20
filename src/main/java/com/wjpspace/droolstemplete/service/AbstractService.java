@@ -1,9 +1,8 @@
 package com.wjpspace.droolstemplete.service;
 
-import com.wjpspace.droolstemplete.entity.Customer;
+import com.wjpspace.droolstemplete.common.enums.BusinessStepEnum;
 import com.wjpspace.droolstemplete.entity.Person;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.util.CollectionUtils;
 
 import java.util.List;
@@ -17,28 +16,26 @@ import java.util.stream.Collectors;
 @Slf4j
 public abstract class AbstractService {
 
-    List<Person> changeCustomerStep(List<Customer> customers) {
+    private final static Integer TWENTY = 20;
 
-        if (CollectionUtils.isEmpty(customers)) {
+    List<Person> changeCustomerStep(List<Person> people) {
+
+        if (CollectionUtils.isEmpty(people)) {
             System.out.println("无数据");
             return null;
         }
 
-        List<Person> collect = customers.stream().map(c -> {
-            Person person = new Person();
-            BeanUtils.copyProperties(c, person);
-            person.setStep(c.getStatus());
+        return people.stream().peek(c -> {
             int i = new Random().nextInt(2) + 1;
             //判断当前是否可以修改
             if (i == 1) {
-                person.setCurrentStep(person.getStep());
+                c.setCurrentStep(c.getStep());
+            } else if (new Random().nextInt(TWENTY) + 1 == 1) {
+                c.setCurrentStep(BusinessStepEnum.REFUSED.getValue());
             } else {
-                person.setCurrentStep(c.getStatus() + 1);
-                c.setStatus(c.getStatus() + 1);
+                c.setCurrentStep(c.getStep() + 1);
             }
-            log.info("person最终态为:{}", person);
-            return person;
+            log.info("person最终态为:{}", c);
         }).collect(Collectors.toList());
-        return collect;
     }
 }

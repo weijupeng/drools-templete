@@ -1,0 +1,56 @@
+package beforeTest
+import com.vcredit.vmc.rules.fact.TaskNoGetLabelAndPlanFact
+import java.util.Random
+import java.util.ArrayList
+import java.util.List
+
+
+//判空
+function Boolean stringisEmpty(String str){
+    return str == null || "".equals(str);
+}
+
+//没有老标签并且是注册  随机生成一个标签
+rule "createNewLabelWhenPM000002"
+no-loop true
+salience 999
+when
+    $fact:TaskNoGetLabelAndPlanFact(stringisEmpty(oldTaskLabel)&& eventType.equals("REGISTER"))
+ then
+    $fact.setPromoteTasksLabel($fact.getTaskNo()+$fact.getEndLabelChar());
+update($fact)
+end
+
+
+//没有原来的标签并且不是注册  走默认X
+rule "createNewLabelWhenNullAndNotRegiter"
+no-loop true
+salience 989
+when
+  $fact:TaskNoGetLabelAndPlanFact( stringisEmpty(oldTaskLabel) && !eventType.equals("REGISTER"))
+ then
+ $fact.setPromoteTasksLabel($fact.getTaskNo()+"X");
+update($fact)
+end
+
+//有老标签并且任务编号一致 沿用
+rule "createNewLabelWhenNotNullAndEquals"
+no-loop true
+salience 979
+when
+  $fact:TaskNoGetLabelAndPlanFact(!stringisEmpty(oldTaskLabel) && taskNo.equals(oldTaskLabel.substring(0, 8)))
+ then
+ $fact.setPromoteTasksLabel($fact.getOldTaskLabel());
+update($fact)
+end
+
+//有老标签但任务编号不一致 走默认X
+rule "createNewLabelWhenNotNullAndNotEquals"
+no-loop true
+salience 969
+when
+    $fact:TaskNoGetLabelAndPlanFact(!stringisEmpty(oldTaskLabel) && !taskNo.equals(oldTaskLabel.substring(0, 8)))
+ then
+    $fact.setPromoteTasksLabel($fact.getTaskNo()+"X");
+update($fact)
+end

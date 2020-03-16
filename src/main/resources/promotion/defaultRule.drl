@@ -1,0 +1,27 @@
+package defaultRule;
+import com.vcredit.vmc.rules.fact.TaskNoGetLabelAndPlanFact
+import java.util.ArrayList
+import java.util.List
+
+
+//不营销组 D
+rule "noPromotion"
+no-loop true
+salience 880
+when
+    $input:TaskNoGetLabelAndPlanFact()
+then
+    ArrayList<String> planNames = new ArrayList<>();
+    planNames.add("telemarketing_1H");
+    $input.setPlanNames(planNames);
+    $input.setIsSendTaskLabel(false);
+    retract($input);
+end
+
+
+
+
+
+
+
+

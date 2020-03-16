@@ -1,0 +1,98 @@
+package rules;
+import com.vcredit.vmc.rules.input.DroolsInput
+import java.util.Random
+dialect "java"
+import java.util.ArrayList
+import java.util.List
+function String createLabelLastChar(){
+ int nextInt = new Random().nextInt(100);
+
+        if (0 < nextInt && nextInt <= 30) {
+            return "A";
+        }
+        if (30 < nextInt && nextInt <= 60) {
+            return "B";
+        }
+        if (60 < nextInt && nextInt <= 90) {
+            return "C";
+        }
+        if (90 < nextInt && nextInt <= 98) {
+            return "D";
+        } else {
+            return "E";
+        }
+}
+
+
+global String taskLabel
+global List<Long> planIds
+
+rule "createNewLabelWhenNullAndRegiter"
+no-loop true
+dialect "java"
+salience 999
+when
+  input:DroolsInput((oldTaskLabel.equals("")||oldTaskLabel==null)&&eventType.equals("REGISTER"))
+ then
+ taskLabel=input.getTaskNo()+createLabelLastChar();
+ input.setTaskLabel(taskLabel);
+ update(input)
+end
+
+rule "createNewLabelWhenNullAndNotRegiter"
+no-loop true
+salience 999
+dialect "java"
+when
+  input:DroolsInput((oldTaskLabel.equals("")||oldTaskLabel==null)&&!eventType.equals("REGISTER"))
+ then
+ taskLabel=input.getTaskNo()+"X";
+ input.setTaskLabel(taskLabel);
+ update(input)
+end
+
+rule "createNewLabelWhenNotNullAndEquals"
+no-loop true
+dialect "java"
+salience 999
+when
+  input:DroolsInput(!(oldTaskLabel.equals("")||oldTaskLabel==null)&&oldTaskLabel.equals(oldTaskLabel.substring(0, 8)))
+ then
+ taskLabel=input.getOldTaskLabel();
+ input.setTaskLabel(taskLabel);
+ update(input)
+end
+
+rule "createNewLabelWhenNotNullAndNotEquals"
+no-loop true
+dialect "java"
+salience 999
+when
+  input:DroolsInput(!(oldTaskLabel.equals("")||oldTaskLabel==null)&&!oldTaskLabel.equals(oldTaskLabel.substring(0, 8)))
+ then
+ taskLabel=input.getTaskNo()+"X";
+ input.setTaskLabel(taskLabel);
+ update(input)
+end
+
+rule "getPlandsWhenTableNotD"
+no-loop true
+dialect "java"
+salience 888
+when
+  input:DroolsInput(!input.getTaskLabel().equals(taskNo+"D"))
+then
+ planIds.add(1L);
+ input.setPlanIds(planIds);
+ end
+
+rule "getPlandsWhenTableD"
+no-loop true
+dialect "java"
+salience 888
+when
+  input:DroolsInput(input.getTaskLabel().equals(taskNo+"D"))
+then
+ input.setPlanIds(planIds);
+ end
+

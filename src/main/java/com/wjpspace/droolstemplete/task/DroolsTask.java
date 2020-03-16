@@ -31,7 +31,7 @@ public class DroolsTask {
     private static final String PASSWORD = "admin";
     private static final String USERNAME = "admin";
     private static final String KIE_CONTAINER_ID = "droolsTemplete";
-    private static final String KIE_SESSION_ID = "ksession-rules";
+    private static final String KIE_SESSION_ID = "rules-session";
 
 
     public static void main(String[] args) {

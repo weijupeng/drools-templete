@@ -50,16 +50,46 @@ public class RemoteCustomerServiceImpl extends AbstractService implements Remote
     public void go2() {
 
         //获取原始数据
-        List<Customer> customerList = customerDao.getAllCustomers();
+//        List<Customer> customerList = customerDao.getAllCustomers();
+
+        ArrayList<Customer> customerList = new ArrayList<>();
+
+        customerList.add(new Customer(1L, "name1", 20, 1));
+        customerList.add(new Customer(2L, "name2", 20, 1));
+        customerList.add(new Customer(3L, "name3", 20, 1));
+        customerList.add(new Customer(4L, "name4", 20, 1));
 
         //转换实体数据
-        List<Person> personList = customerList.stream().map(customer -> {
-            Person person = new Person();
-            BeanUtils.copyProperties(customer, person);
-            person.setStep(customer.getStatus());
-            return person;
-        }).collect(Collectors.toList());
+        List<Person> personList = getFacts(customerList);
 
+        //执行第一个规则文件并获取结果
+        ArrayList<Person> customers = getRule1Result(personList);
+
+        //执行第二个规则文件并拿到需要推送用户的ID
+        ArrayList<Long> idList = getRule2Result(customers);
+
+        System.out.println("需要被推送到电销系统的是：");
+        System.out.println("" + idList);
+    }
+
+    private ArrayList<Long> getRule2Result(ArrayList<Person> customers) {
+        List<Person> personList2 = changeCustomerStep(customers);
+
+        //执行规则并获取结果
+        ExecutionResults result = getExecutionResults(personList2, KIE_SESSION_ID2);
+
+        //创建接收
+        ArrayList<Long> idList = new ArrayList<>();
+        for (int i = 0; i < customers.size(); i++) {
+            Person value = (Person) result.getValue("person" + i);
+            if (value.getValid()) {
+                idList.add(value.getId());
+            }
+        }
+        return idList;
+    }
+
+    private ArrayList<Person> getRule1Result(List<Person> personList) {
         ExecutionResults result = getExecutionResults(personList, KIE_SESSION_ID);
 
         //创建接收
@@ -71,36 +101,29 @@ public class RemoteCustomerServiceImpl extends AbstractService implements Remote
                 customers.add(value);
             }
         }
-
-        //匹配第二个规则文件
-        checkRules2(customers);
+        return customers;
     }
 
+    private List<Person> getFacts(List<Customer> customerList) {
+        return customerList.stream().map(customer -> {
+            Person person = new Person();
+            BeanUtils.copyProperties(customer, person);
+            person.setStep(customer.getStatus());
+            return person;
+        }).collect(Collectors.toList());
+    }
 
     /**
-     * 执行规则文件2
-     * @param people 通过文件1的用户
+     * 获取远程连接
+     * @return RuleServicesClient
      */
-    private void checkRules2(ArrayList<Person> people) {
-        //随机改变数据对象，给对象加上当前状态
-        List<Person> personList = changeCustomerStep(people);
-
-        //执行规则并获取结果
-        ExecutionResults result = getExecutionResults(personList, KIE_SESSION_ID2);
-
-        //创建接收
-        ArrayList<Long> idList = new ArrayList<>();
-        for (int i = 0; i < personList.size(); i++) {
-            Person value = (Person) result.getValue("person" + i);
-            if (value.getValid()) {
-                idList.add(value.getId());
-            }
-        }
-
-        System.out.println("需要被推送到电销系统的是：");
-        System.out.println(idList);
+    private RuleServicesClient getRuleServicesClient() {
+        KieServicesConfiguration config = KieServicesFactory.newRestConfiguration(SERVER_URL, USERNAME, PASSWORD);
+        config.setMarshallingFormat(MarshallingFormat.JSON);
+        config.setTimeout(30000L);
+        KieServicesClient client = KieServicesFactory.newKieServicesClient(config);
+        return client.getServicesClient(RuleServicesClient.class);
     }
-
 
     /**
      * 批量进行规则运算
@@ -122,18 +145,6 @@ public class RemoteCustomerServiceImpl extends AbstractService implements Remote
                 cmdFactory.newBatchExecution(commands, kieSessionId));
 
         return response.getResult();
-    }
-
-    /**
-     * 获取远程连接
-     * @return RuleServicesClient
-     */
-    private RuleServicesClient getRuleServicesClient() {
-        KieServicesConfiguration config = KieServicesFactory.newRestConfiguration(SERVER_URL, USERNAME, PASSWORD);
-        config.setMarshallingFormat(MarshallingFormat.JSON);
-        config.setTimeout(30000L);
-        KieServicesClient client = KieServicesFactory.newKieServicesClient(config);
-        return client.getServicesClient(RuleServicesClient.class);
     }
 
 

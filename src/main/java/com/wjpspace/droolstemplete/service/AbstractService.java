@@ -35,7 +35,7 @@ public abstract class AbstractService {
             } else {
                 c.setCurrentStep(c.getStep() + 1);
             }
-            log.info("person最终态为:{}", c);
+            System.out.println("person最终态为:" + c);
         }).collect(Collectors.toList());
     }
 }

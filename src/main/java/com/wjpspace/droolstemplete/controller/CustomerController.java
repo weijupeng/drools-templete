@@ -1,8 +1,12 @@
 package com.wjpspace.droolstemplete.controller;
 
+import com.wjpspace.droolstemplete.entity.PromotionTaskRuleInput;
 import com.wjpspace.droolstemplete.service.CustomerService;
+import com.wjpspace.droolstemplete.service.PromotionService;
 import com.wjpspace.droolstemplete.service.RemoteCustomerService;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
@@ -19,6 +23,8 @@ public class CustomerController {
     @Resource
     private RemoteCustomerService remoteCustomerService;
 
+    @Resource
+    private PromotionService promotionService;
 
     /**
      * 本地规则文件
@@ -46,5 +52,17 @@ public class CustomerController {
             return "false";
         }
         return "Success";
+    }
+
+
+    @PostMapping("/stream")
+    public String stream(@RequestBody PromotionTaskRuleInput input) {
+        try {
+            promotionService.stream(input);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return e.getMessage();
+        }
+        return "true";
     }
 }

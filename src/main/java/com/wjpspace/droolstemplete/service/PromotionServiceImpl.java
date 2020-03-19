@@ -1,9 +1,14 @@
 package com.wjpspace.droolstemplete.service;
 
-import com.wjpspace.droolstemplete.dao.PromotionOriginalDao;
-import com.wjpspace.droolstemplete.entity.PromotionOriginal;
-import com.wjpspace.droolstemplete.entity.PromotionTaskRuleInput;
+import com.vcredit.framework.fmp.kie.server.client.service.DroolsRuleEngine;
+import com.vcredit.framework.fmp.kie.server.client.service.RuleParams;
+import com.vcredit.framework.fmp.kie.server.client.service.RuleParamsBuilder;
+import com.vcredit.framework.fmp.kie.server.client.service.RuleResults;
+import com.vcredit.vmc.rules.drools.input.PromotionRuleDroolsInput;
+import com.vcredit.vmc.rules.drools.output.PromotionRuleDroolsOutput;
 import com.vcredit.vmc.rules.fact.TaskNoGetLabelAndPlanFact;
+import com.wjpspace.droolstemplete.dao.PromotionOriginalDao;
+import com.wjpspace.droolstemplete.entity.*;
 import org.kie.api.KieServices;
 import org.kie.api.runtime.KieSession;
 import org.springframework.beans.BeanUtils;
@@ -11,9 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * @author wjp
@@ -23,11 +26,16 @@ import java.util.Optional;
 public class PromotionServiceImpl implements PromotionService {
     @Resource
     private PromotionOriginalDao promotionOriginalDao;
+    @Resource
+    private DroolsRuleEngine droolsRuleEngine;
+
+    private static Set<String> specialChannelFilterDataSource = initSpecialChannelFilterDataSource();
+
     @Override
     public void stream(PromotionTaskRuleInput input) {
         String label = selectBeforeLabel(input);
         TaskNoGetLabelAndPlanFact fact = new TaskNoGetLabelAndPlanFact();
-        BeanUtils.copyProperties(input,fact);
+        BeanUtils.copyProperties(input, fact);
         fact.setOldTaskLabel(label);
         //获取规则1的kieSession
         KieServices kieServices = KieServices.Factory.get();
@@ -41,17 +49,78 @@ public class PromotionServiceImpl implements PromotionService {
         System.out.println(fact);
     }
 
+    @Override
+    public void rule(PromotionTaskRuleInput input) {
+
+    }
 
     private String selectBeforeLabel(PromotionTaskRuleInput input) {
         //获取历史记录
         List<PromotionOriginal> getBeforeOriginal = promotionOriginalDao.selectLastLabel(input);
-        //队列减去刚插入的一条
-//        getBeforeOriginal.remove(getBeforeOriginal.size() - 1);
         if (CollectionUtils.isEmpty(getBeforeOriginal)) {
             return null;
         }
         //获取最新一条
         Optional<PromotionOriginal> first = getBeforeOriginal.stream().max(Comparator.comparing(PromotionOriginal::getUpdatedTime));
         return first.map(PromotionOriginal::getPromoteTasksLabel).orElse(null);
+    }
+
+    /**
+     * 初始化特殊渠道
+     * @return 特殊渠道
+     */
+    private static Set<String> initSpecialChannelFilterDataSource() {
+        if (Objects.isNull(specialChannelFilterDataSource)) {
+            specialChannelFilterDataSource = new HashSet<>();
+            specialChannelFilterDataSource.add("zhongxinyinhangh501");
+        }
+        return specialChannelFilterDataSource;
+    }
+
+    @Override
+    public TelemarketingPromotionRuleOutput rule2(TelemarketingPromotionRuleInput input) {
+        TelemarketingPromotionRuleOutput output = new TelemarketingPromotionRuleOutput();
+        int stepOrdinal = BusinessStepEnum.valueOf(input.getStep()).ordinal();
+        int currentOrdinal = BusinessStepEnum.valueOf(input.getCurrentStep()).ordinal();
+        PromotionRuleDroolsInput fact = new PromotionRuleDroolsInput();
+
+        BeanUtils.copyProperties(input, fact);
+        fact.setCurrentStepNumber(currentOrdinal);
+        fact.setStepNumber(stepOrdinal);
+        PromotionRuleDroolsOutput ruleOutput = new PromotionRuleDroolsOutput();
+
+
+//        KieServices kieServices = KieServices.Factory.get();
+//        KieSession kieSession = kieServices.getKieClasspathContainer().newKieSession("isDoPromotion");
+//
+//        //执行规则并拿到结果
+//        kieSession.insert(fact);
+//        kieSession.setGlobal("specialChannelFilterDataSource",specialChannelFilterDataSource);
+//        kieSession.insert(ruleOutput);
+//        kieSession.fireAllRules();
+//        kieSession.dispose();
+//        if (Objects.nonNull(ruleOutput.getResult())) {
+//            BeanUtils.copyProperties(ruleOutput, output);
+//            return output;
+//        }
+//        output.setResult(Boolean.TRUE);
+        RuleParams ruleParam = RuleParamsBuilder.create(input.getKieContainerId(), input.getKieSessionId())
+                .setGlobal("specialChannelFilterDataSource", initSpecialChannelFilterDataSource())
+                .insert("input", fact)
+                .insert("output", ruleOutput)
+                .build();
+
+        RuleResults ruleResult = droolsRuleEngine.call(ruleParam);
+
+        if (ruleResult.isSuccess()) {
+            PromotionRuleDroolsOutput output1 = ruleResult.getValue("output");
+            if (Objects.isNull(output1.getResult())) {
+                output.setResult(Boolean.TRUE);
+            } else {
+                BeanUtils.copyProperties(output1, output);
+            }
+            return output;
+        }
+        return output;
     }
 }

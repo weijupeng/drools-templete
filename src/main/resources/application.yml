@@ -1,6 +1,16 @@
 server:
   port: 8888
 
+drools.kie:
+  server:
+    # 集群节点
+    nodes: 10.139.60.81:8180,10.139.60.81:8280
+    # 超时时间
+    timeout: 5s
+    # 用户名（已加密）
+    username: secret(bKAJDsNPMqB3EOJWOE7+8k1nsg6F+tsA0w==)
+    # 密码（已加密）
+    password: secret(bKAJDsNPMqB3nQKBB4LDfAA0noADH6FVXIxk)
 #定时任务开关
 scheduling:
   enabled: false

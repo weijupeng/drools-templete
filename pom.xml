@@ -72,7 +72,11 @@
             <artifactId>fastjson</artifactId>
             <version>1.2.57</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.vcredit.framework.fmp</groupId>
+            <artifactId>kie-server-client-spring-boot-starter</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <build>

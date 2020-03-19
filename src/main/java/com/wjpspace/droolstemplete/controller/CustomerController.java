@@ -1,6 +1,8 @@
 package com.wjpspace.droolstemplete.controller;
 
 import com.wjpspace.droolstemplete.entity.PromotionTaskRuleInput;
+import com.wjpspace.droolstemplete.entity.TelemarketingPromotionRuleInput;
+import com.wjpspace.droolstemplete.entity.TelemarketingPromotionRuleOutput;
 import com.wjpspace.droolstemplete.service.CustomerService;
 import com.wjpspace.droolstemplete.service.PromotionService;
 import com.wjpspace.droolstemplete.service.RemoteCustomerService;
@@ -65,4 +67,21 @@ public class CustomerController {
         }
         return "true";
     }
+
+    @PostMapping("/rule")
+    public String rule(@RequestBody PromotionTaskRuleInput input) {
+        try {
+            promotionService.rule(input);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return e.getMessage();
+        }
+        return "true";
+    }
+
+    @PostMapping("/rule2")
+    public TelemarketingPromotionRuleOutput rule2(@RequestBody TelemarketingPromotionRuleInput input) {
+       return promotionService.rule2(input);
+    }
+
 }

@@ -1,6 +1,8 @@
 package com.wjpspace.droolstemplete.service;
 
 import com.wjpspace.droolstemplete.entity.PromotionTaskRuleInput;
+import com.wjpspace.droolstemplete.entity.TelemarketingPromotionRuleInput;
+import com.wjpspace.droolstemplete.entity.TelemarketingPromotionRuleOutput;
 
 /**
  * @author wjp
@@ -9,4 +11,8 @@ import com.wjpspace.droolstemplete.entity.PromotionTaskRuleInput;
 public interface PromotionService {
 
     void stream(PromotionTaskRuleInput input);
+
+    void rule(PromotionTaskRuleInput input);
+
+    TelemarketingPromotionRuleOutput rule2(TelemarketingPromotionRuleInput input);
 }

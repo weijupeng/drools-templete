@@ -4,8 +4,8 @@ import com.vcredit.framework.fmp.kie.server.client.service.DroolsRuleEngine;
 import com.vcredit.framework.fmp.kie.server.client.service.RuleParams;
 import com.vcredit.framework.fmp.kie.server.client.service.RuleParamsBuilder;
 import com.vcredit.framework.fmp.kie.server.client.service.RuleResults;
-import com.vcredit.vmc.rules.drools.input.PromotionRuleDroolsInput;
-import com.vcredit.vmc.rules.drools.output.PromotionRuleDroolsOutput;
+import com.vcredit.vmc.rules.drools.input.AntiCheckInput;
+import com.vcredit.vmc.rules.drools.output.AntiCheckOutput;
 import com.vcredit.vmc.rules.fact.TaskNoGetLabelAndPlanFact;
 import com.wjpspace.droolstemplete.dao.PromotionOriginalDao;
 import com.wjpspace.droolstemplete.entity.*;
@@ -80,30 +80,46 @@ public class PromotionServiceImpl implements PromotionService {
     @Override
     public TelemarketingPromotionRuleOutput rule2(TelemarketingPromotionRuleInput input) {
         TelemarketingPromotionRuleOutput output = new TelemarketingPromotionRuleOutput();
+        AntiCheckInput fact = initFact(input);
+        AntiCheckOutput ruleOutput = new AntiCheckOutput();
+
+
+        KieServices kieServices = KieServices.Factory.get();
+        KieSession kieSession = kieServices.getKieClasspathContainer().newKieSession("antiCheckRule");
+        //执行规则并拿到结果
+        kieSession.insert(fact);
+        kieSession.setGlobal("specialChannelFilterDataSource",specialChannelFilterDataSource);
+        kieSession.insert(ruleOutput);
+        kieSession.fireAllRules();
+        kieSession.dispose();
+        if (Objects.nonNull(ruleOutput.getResult())) {
+            BeanUtils.copyProperties(ruleOutput, output);
+            return output;
+        }
+        output.setResult(Boolean.TRUE);
+        return output;
+    }
+
+    private AntiCheckInput initFact(TelemarketingPromotionRuleInput input) {
         int stepOrdinal = BusinessStepEnum.valueOf(input.getStep()).ordinal();
         int currentOrdinal = BusinessStepEnum.valueOf(input.getCurrentStep()).ordinal();
-        PromotionRuleDroolsInput fact = new PromotionRuleDroolsInput();
+        AntiCheckInput fact = new AntiCheckInput();
 
         BeanUtils.copyProperties(input, fact);
         fact.setCurrentStepNumber(currentOrdinal);
         fact.setStepNumber(stepOrdinal);
-        PromotionRuleDroolsOutput ruleOutput = new PromotionRuleDroolsOutput();
+        return fact;
+    }
 
 
-//        KieServices kieServices = KieServices.Factory.get();
-//        KieSession kieSession = kieServices.getKieClasspathContainer().newKieSession("isDoPromotion");
-//
-//        //执行规则并拿到结果
-//        kieSession.insert(fact);
-//        kieSession.setGlobal("specialChannelFilterDataSource",specialChannelFilterDataSource);
-//        kieSession.insert(ruleOutput);
-//        kieSession.fireAllRules();
-//        kieSession.dispose();
-//        if (Objects.nonNull(ruleOutput.getResult())) {
-//            BeanUtils.copyProperties(ruleOutput, output);
-//            return output;
-//        }
-//        output.setResult(Boolean.TRUE);
+    @Override
+    public TelemarketingPromotionRuleOutput rule3(TelemarketingPromotionRuleInput input) {
+        TelemarketingPromotionRuleOutput output = new TelemarketingPromotionRuleOutput();
+        AntiCheckInput fact = initFact(input);
+        AntiCheckOutput ruleOutput = new AntiCheckOutput();
+
+
+        output.setResult(Boolean.TRUE);
         RuleParams ruleParam = RuleParamsBuilder.create(input.getKieContainerId(), input.getKieSessionId())
                 .setGlobal("specialChannelFilterDataSource", initSpecialChannelFilterDataSource())
                 .insert("input", fact)
@@ -113,7 +129,7 @@ public class PromotionServiceImpl implements PromotionService {
         RuleResults ruleResult = droolsRuleEngine.call(ruleParam);
 
         if (ruleResult.isSuccess()) {
-            PromotionRuleDroolsOutput output1 = ruleResult.getValue("output");
+            AntiCheckOutput output1 = ruleResult.getValue("output");
             if (Objects.isNull(output1.getResult())) {
                 output.setResult(Boolean.TRUE);
             } else {

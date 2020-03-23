@@ -1,9 +1,10 @@
-package isDoPromotion;
+package antiCheckRule;
 import com.vcredit.vmc.rules.drools.input.AntiCheckInput
 import com.vcredit.vmc.rules.drools.output.AntiCheckOutput
 import com.vcredit.vmc.rules.drools.utils.IdCardUtils
 
 import java.math.BigDecimal
+import java.util.ArrayList
 import java.util.Set
 
 global Set<String> specialChannelFilterDataSource
@@ -22,19 +23,6 @@ function Boolean greaterTwo(BigDecimal quota){
     return BigDecimal.valueOf(2000).compareTo(quota) >= 0;
 }
 
-
-//0.test
-rule "test"
-salience 2000
-no-loop true
-  when
-   $output:AntiCheckOutput()
-  then
-   $output.setRejectCode("SMS0001");
-   $output.setRejectReason("流程A终止");
-   $output.setResult(Boolean.FALSE);
-   retract($output)
-end
 
 //1.流程终止
 rule "flowEndRefuseRule"

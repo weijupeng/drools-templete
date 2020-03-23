@@ -84,4 +84,10 @@ public class CustomerController {
        return promotionService.rule2(input);
     }
 
+
+    @PostMapping("/rule3")
+    public TelemarketingPromotionRuleOutput rule3(@RequestBody TelemarketingPromotionRuleInput input) {
+        return promotionService.rule3(input);
+    }
+
 }

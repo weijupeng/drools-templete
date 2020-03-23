@@ -15,4 +15,6 @@ public interface PromotionService {
     void rule(PromotionTaskRuleInput input);
 
     TelemarketingPromotionRuleOutput rule2(TelemarketingPromotionRuleInput input);
+
+    TelemarketingPromotionRuleOutput rule3(TelemarketingPromotionRuleInput input);
 }

@@ -12,4 +12,7 @@
     <kbase name="rules4" packages="isDoPromotion">
         <ksession name="isDoPromotion"/>
     </kbase>
+    <kbase name="rules5">
+        <ksession name="antiCheckRule"/>
+    </kbase>
 </kmodule>

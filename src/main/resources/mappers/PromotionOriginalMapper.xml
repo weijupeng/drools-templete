@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.vcredit.vmc.rules.dao.mapper.PromotionOriginalMapper">
+    <resultMap id="BaseResultMap" type="com.vcredit.vmc.rules.dao.entity.PromotionOriginal">
+        <result column="id" jdbcType="BIGINT" property="id"/>
+        <result column="product_code" jdbcType="VARCHAR" property="productCode"/>
+        <result column="event_type" jdbcType="VARCHAR" property="eventType"/>
+        <result column="mobile" jdbcType="VARCHAR" property="mobile"/>
+        <result column="register_id" jdbcType="BIGINT" property="registerId"/>
+        <result column="business_id" jdbcType="BIGINT" property="businessId"/>
+        <result column="promote_source" jdbcType="TINYINT" property="promoteSource"/>
+        <result column="promote_tasks_no" jdbcType="BIGINT" property="promoteTasksNo"/>
+        <result column="promote_tasks_label" jdbcType="VARCHAR" property="promoteTasksLabel"/>
+    </resultMap>
+    <select id="selectLastLabel" resultType="java.lang.String">
+        select promote_tasks_label from t_promotion_original where mobile = #{mobile} and product_code =#{productCode}
+        and promote_tasks_no != "" order by updated_time desc limit 1
+    </select>
+
+</mapper>

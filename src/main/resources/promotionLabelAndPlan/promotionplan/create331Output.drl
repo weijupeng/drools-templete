@@ -1,0 +1,81 @@
+package getTaskOutput;
+
+import com.vcredit.vmc.rules.drools.input.PromotionLabelAndPlanInput
+import com.vcredit.vmc.rules.drools.output.PromotionLabelAndPlanOutput
+import java.util.ArrayList
+
+salience 90
+
+//331需求  E组为不营销组
+rule "noPromotion"
+no-loop true
+
+when
+    $input:PromotionLabelAndPlanInput(taskNo.equals("PM000003"))
+    $output:PromotionLabelAndPlanOutput(promoteTasksLabel == $input.getTaskNo()+"E" )
+then
+    ArrayList<String> planNames = new ArrayList<String>();
+    $output.setPlanNames(planNames);
+    $output.setIsSendTaskLabel(Boolean.FALSE);
+    retract($input);
+end
+
+
+
+//对照组D  不发短信
+rule "getPlandsWhenTableD"
+no-loop true
+
+when
+    $input:PromotionLabelAndPlanInput(taskNo.equals("PM000003"))
+    $output:PromotionLabelAndPlanOutput(promoteTasksLabel == $input.getTaskNo()+"D" )
+then
+    ArrayList<String> planNames = new ArrayList<String>();
+    planNames.add("telemarketing_1H");
+    $output.setPlanNames(planNames);
+    $output.setIsSendTaskLabel(Boolean.FALSE);
+    retract($input);
+end
+
+//A 注册 B 授信 C/X 注册或授信  既发短息 也推电销
+rule "getPlandsWhenSmsAndTele"
+no-loop true
+
+when
+    $input:PromotionLabelAndPlanInput(taskNo == "PM000003")
+    $output:PromotionLabelAndPlanOutput(
+   (promoteTasksLabel == $input.taskNo+"A" && $input.eventType == "REGISTER")    ||
+   (promoteTasksLabel == $input.taskNo+"B" && $input.eventType==("APPLYAUTH_1"))  ||
+   (promoteTasksLabel == $input.taskNo+"C" &&( $input.eventType==("REGISTER") || $input.eventType==("APPLYAUTH_1"))) ||
+   (promoteTasksLabel == $input.taskNo+"X" &&( $input.eventType==("REGISTER") || $input.eventType==("APPLYAUTH_1")))
+   )
+then
+    ArrayList<String> planNames = new ArrayList<String>();
+    planNames.add("telemarketing_1H");
+    planNames.add("sms_10M");
+    $output.setPlanNames(planNames);
+    $output.setIsSendTaskLabel(Boolean.FALSE);
+    retract($input);
+ end
+
+//其他情况下 默认走电销
+rule "getPlandsWhenTableANotRegister"
+no-loop true
+when
+    $input:PromotionLabelAndPlanInput(taskNo.equals("PM000003"))
+    $output:PromotionLabelAndPlanOutput()
+then
+    ArrayList<String> planNames = new ArrayList<String>();
+    planNames.add("telemarketing_1H");
+    $output.setPlanNames(planNames);
+    $output.setIsSendTaskLabel(Boolean.FALSE);
+    retract($input);
+end
+
+
+
+
+
+
+
+

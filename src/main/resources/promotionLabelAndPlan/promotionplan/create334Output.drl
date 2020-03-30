@@ -1,0 +1,73 @@
+package getTaskOutput;
+
+import com.vcredit.vmc.rules.drools.input.PromotionLabelAndPlanInput
+import com.vcredit.vmc.rules.drools.output.PromotionLabelAndPlanOutput
+import java.util.ArrayList
+
+
+salience 90
+
+
+//注册/授信组
+rule "registerRule"
+no-loop true
+when
+    $input:PromotionLabelAndPlanInput(taskNo.equals("PM000004") , eventType == "REGISTER" || eventType == "APPLYAUTH_1")
+    $output:PromotionLabelAndPlanOutput()
+then
+    ArrayList<String> planNames = new ArrayList<String>();
+    planNames.add("telemarketing_1H");
+    planNames.add("sms_10M");
+    planNames.add("sms_1D_09");
+    planNames.add("sms_2D_09");
+    planNames.add("sms_3D_09");
+    planNames.add("sms_6D_09");
+    planNames.add("sms_10D_09");
+    planNames.add("sms_18D_09");
+    planNames.add("sms_28D_09");
+    $output.setPlanNames(planNames);
+    $output.setPromoteTasksLabel("");
+    $output.setIsSendTaskLabel(Boolean.FALSE);
+    retract($input);
+end
+
+//首，加，再贷
+rule "applyauthRule"
+no-loop true
+when
+    $input:PromotionLabelAndPlanInput(taskNo.equals("PM000004") , eventType == "DECISION_COMPILTE")
+    $output:PromotionLabelAndPlanOutput()
+then
+    ArrayList<String> planNames = new ArrayList<String>();
+        planNames.add("telemarketing_1H");
+        planNames.add("sms_1D_09");
+        planNames.add("sms_3D_09");
+        planNames.add("sms_5D_09");
+        planNames.add("sms_8D_09");
+        planNames.add("sms_18D_09");
+        planNames.add("sms_28D_09");
+        planNames.add("sms_38D_09");
+        planNames.add("sms_48D_09");
+        planNames.add("sms_58D_09");
+        planNames.add("sms_88D_09");
+    $output.setPlanNames(planNames);
+    $output.setPromoteTasksLabel("");
+    $output.setIsSendTaskLabel(Boolean.FALSE);
+    retract($input);
+end
+
+//提现
+rule "decisionCompilteRule"
+no-loop true
+when
+    $input:PromotionLabelAndPlanInput(taskNo.equals("PM000004") , eventType == "DECISION_APPLY")
+    $output:PromotionLabelAndPlanOutput()
+then
+    ArrayList<String> planNames = new ArrayList<String>();
+    $output.setPlanNames(planNames);
+    $output.setPromoteTasksLabel("");
+    $output.setIsSendTaskLabel(Boolean.FALSE);
+    retract($input);
+end
+
+

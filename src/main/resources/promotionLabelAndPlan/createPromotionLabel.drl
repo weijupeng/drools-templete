@@ -1,0 +1,121 @@
+package createPromotionLabel;
+salience 100;
+import com.vcredit.vmc.rules.drools.input.PromotionLabelAndPlanInput;
+import com.vcredit.vmc.rules.drools.output.PromotionLabelAndPlanOutput;
+import java.util.Random;
+
+//331需求创建随机标签符
+function String createLabelLastChar331(){
+        int nextInt = new Random().nextInt(100);
+
+        if (0 < nextInt && nextInt <= 30) {
+            return "A";
+        }
+        if (30 < nextInt && nextInt <= 60) {
+            return "B";
+        }
+        if (60 < nextInt && nextInt <= 90) {
+            return "C";
+        }
+        if (90 < nextInt && nextInt <= 98) {
+            return "D";
+        }
+        else {
+            return "E";
+        }
+}
+
+//333需求创建随机标签符
+function String createLabelLastChar333(){
+        int nextInt = new Random().nextInt(100)+1;
+
+        if (0 < nextInt && nextInt <= 30) {
+            return "A";
+        }
+        if (30 < nextInt && nextInt <= 50) {
+            return "B";
+        }
+        if (50 < nextInt && nextInt <= 100) {
+            return "C";
+        }
+        else {
+            return "D";
+        }
+}
+
+//默认电销和t+12
+function String createLabelLastCharDefault(){
+      return "";
+}
+
+//判空
+function Boolean stringisEmpty(String str){
+    return str == null || "".equals(str);
+}
+
+//没有老标签并且是注册  随机生成一个标签
+rule "createNewLabelWhenDefault"
+no-loop true
+when
+    $output: PromotionLabelAndPlanOutput()
+    $input: PromotionLabelAndPlanInput(stringisEmpty(oldTaskLabel), eventType == "REGISTER",
+    taskNo == "PM000001" || taskNo == "PM000000" || taskNo == "PM000004")
+ then
+    $output.setPromoteTasksLabel($input.getTaskNo()+createLabelLastCharDefault());
+    update($output)
+end
+
+//没有老标签并且是注册  随机生成一个标签
+rule "createNewLabelWhen333"
+no-loop true
+when
+    $output:PromotionLabelAndPlanOutput()
+    $input:PromotionLabelAndPlanInput(stringisEmpty(oldTaskLabel) , eventType == "REGISTER" && taskNo == "PM000002")
+ then
+    $output.setPromoteTasksLabel($input.getTaskNo()+createLabelLastChar333());
+    update($output)
+end
+
+//没有老标签并且是注册  随机生成一个标签
+rule "createNewLabelWhen331"
+no-loop true
+when
+    $output:PromotionLabelAndPlanOutput()
+    $input:PromotionLabelAndPlanInput(stringisEmpty(oldTaskLabel) , eventType == "REGISTER" , taskNo == "PM000003")
+ then
+    $output.setPromoteTasksLabel($input.getTaskNo()+createLabelLastChar331());
+    update($output)
+end
+
+//没有原来的标签并且不是注册  走默认X
+rule "createNewLabelWhenNullAndNotRegiter"
+no-loop true
+when
+    $output:PromotionLabelAndPlanOutput()
+    $input:PromotionLabelAndPlanInput(stringisEmpty(oldTaskLabel) , eventType != "REGISTER")
+ then
+    $output.setPromoteTasksLabel($input.getTaskNo()+"X");
+    update($output)
+end
+
+//有老标签并且任务编号一致 沿用
+rule "createNewLabelWhenNotNullAndEquals"
+no-loop true
+when
+    $output:PromotionLabelAndPlanOutput()
+    $input:PromotionLabelAndPlanInput(!stringisEmpty(oldTaskLabel) , taskNo == oldTaskLabel.substring(0, 8))
+ then
+    $output.setPromoteTasksLabel($input.getOldTaskLabel());
+    update($output)
+end
+
+//有老标签但任务编号不一致 走默认X
+rule "createNewLabelWhenNotNullAndNotEquals"
+no-loop true
+when
+    $output:PromotionLabelAndPlanOutput()
+    $input:PromotionLabelAndPlanInput(!stringisEmpty(oldTaskLabel) , taskNo != oldTaskLabel.substring(0, 8))
+ then
+    $output.setPromoteTasksLabel($input.getTaskNo()+"X");
+    update($output)
+end

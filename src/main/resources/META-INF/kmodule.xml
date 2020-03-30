@@ -1,18 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<kmodule xmlns="http://jboss.org/kie/6.0.0/kmodule">
-    <kbase name="rules" packages="defaultRule">
-        <ksession name="defaultRule"/>
-    </kbase>
-    <kbase name="rules2" packages="sms331Rule,beforeTest,createEndLabelChar">
-        <ksession name="sms331Rule"/>
-    </kbase>
-    <kbase name="rules3" packages="tele333Rule,beforeTest,createEndLabelChar">
-        <ksession name="tele333Rule"/>
-    </kbase>
-    <kbase name="rules4" packages="isDoPromotion">
-        <ksession name="isDoPromotion"/>
-    </kbase>
-    <kbase name="rules5">
-        <ksession name="antiCheckRule"/>
+<kmodule xmlns="http://www.drools.org/xsd/kmodule" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <kbase name="smsAntiCheckRule" default="true" eventProcessingMode="stream" equalsBehavior="identity" packages="smsAntiCheckRule">
+        <ksession name="smsAntiCheckRule" type="stateless" default="true" clockType="realtime"/>
     </kbase>
 </kmodule>

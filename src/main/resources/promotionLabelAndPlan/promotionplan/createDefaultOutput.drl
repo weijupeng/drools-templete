@@ -1,0 +1,30 @@
+package getTaskOutput;
+
+import com.vcredit.vmc.rules.drools.input.PromotionLabelAndPlanInput
+import com.vcredit.vmc.rules.drools.output.PromotionLabelAndPlanOutput
+import java.util.ArrayList
+
+salience 90
+
+//不营销组 D
+rule "defaultRule"
+no-loop true
+when
+    $input:PromotionLabelAndPlanInput(taskNo == "PM000001" || taskNo == "PM000000")
+    $output:PromotionLabelAndPlanOutput()
+then
+    ArrayList<String> planNames = new ArrayList<String>();
+    planNames.add("telemarketing_1H");
+    $output.setPlanNames(planNames);
+    $output.setPromoteTasksLabel("");
+    $output.setIsSendTaskLabel(Boolean.FALSE);
+    retract($input);
+end
+
+
+
+
+
+
+
+

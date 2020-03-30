@@ -1,0 +1,152 @@
+package teleAntiCheckRule;
+import com.vcredit.vmc.rules.drools.input.TeleAntiCheckInput
+import com.vcredit.vmc.rules.drools.output.TeleAntiCheckOutput
+import com.vcredit.vmc.rules.drools.utils.IdCardUtils
+
+import java.math.BigDecimal
+import java.util.ArrayList
+
+global ArrayList<String> specialChannelFilterDataSource
+
+//是否完成
+function Boolean isFinished(Integer stepNumber){
+    return stepNumber == 7 || stepNumber == 8;
+}
+
+//处在授信期
+function Boolean onGrantCredit(Integer stepNumber){
+   return stepNumber == 1 || stepNumber == 2 || stepNumber == 3 || stepNumber == 4;
+}
+
+function Boolean greaterTwo(BigDecimal quota){
+    return BigDecimal.valueOf(2000).compareTo(quota) >= 0;
+}
+
+
+//1.流程终止
+rule "flowEndRefuseRule"
+salience 1000
+no-loop true
+  when
+   $output:TeleAntiCheckOutput()
+  
+   $input:TeleAntiCheckInput(isFinished(currentStepNumber) || isFinished(stepNumber))
+  then
+   $output.setRejectCode("SMS0001");
+   $output.setRejectReason("流程终止");
+   $output.setResult(Boolean.FALSE);
+   retract($output)
+end
+
+
+//2.决策推送时的步骤已经完成
+rule "pushStepHasDoneRefuseRule"
+salience 900
+   when
+    $output:TeleAntiCheckOutput()
+    $input:TeleAntiCheckInput(
+    (stepNumber == 0 && currentStepNumber > stepNumber) ||
+    (onGrantCredit(stepNumber) && currentStepNumber > stepNumber && !onGrantCredit(currentStepNumber)) ||
+    (stepNumber >= 5 && currentStepNumber >stepNumber )
+    )
+   then
+    $output.setRejectCode("SMS0002");
+    $output.setRejectReason("决策推送时的步骤已经完成");
+    $output.setResult(Boolean.FALSE);
+    retract($output)
+end
+
+
+//3.授信是内部超时，不是因为用户不操作
+rule "creditTimeoutRefuseRule"
+salience 800
+  when
+    $output:TeleAntiCheckOutput()
+    $input:TeleAntiCheckInput(currentStepNumber == 5)
+  then
+    $output.setRejectCode("SMS0003");
+    $output.setRejectReason("授信是内部超时，不是因为用户不操作");
+    $output.setResult(Boolean.FALSE);
+    retract($output)
+end
+
+// 4.“授信”环节需剔除年龄不符合要求的用户，卡豆闪年龄要求：20-50周岁
+rule "checkIdNo"
+salience 750
+  when
+    $output:TeleAntiCheckOutput()
+    $input:TeleAntiCheckInput( stepNumber==currentStepNumber && onGrantCredit(currentStepNumber) &&
+    idNo == null || "" == idNo || !IdCardUtils.validateCard(idNo))
+  then
+   $output.setRejectCode("SMS0004");
+   $output.setRejectReason("授信环节需剔除年龄不符合要求的用户，卡豆闪年龄要求：20-50周岁");
+   $output.setResult(Boolean.FALSE);
+   retract($output)
+end
+
+// 4.“授信”环节需剔除年龄不符合要求的用户，卡豆闪年龄要求：20-50周岁
+rule "ageRejectWhenGrantCreditRefuseRule"
+salience 700
+  when
+    $output:TeleAntiCheckOutput()
+    $input:TeleAntiCheckInput(stepNumber == currentStepNumber && onGrantCredit(currentStepNumber)
+    && (IdCardUtils.getAgeByIdCard(idNo) < 20 || IdCardUtils.getAgeByIdCard(idNo) > 50))
+  then
+   $output.setRejectCode("SMS0004");
+   $output.setRejectReason("授信环节需剔除年龄不符合要求的用户，卡豆闪年龄要求：20-50周岁");
+   $output.setResult(Boolean.FALSE);
+   retract($output)
+end
+
+
+// 5.决策完成但出0额度
+rule "decisionFinishedAndQuotaIsZeroRefuseRule"
+salience 600
+  when
+    $output:TeleAntiCheckOutput()
+   $input:TeleAntiCheckInput(currentStepNumber==6 && BigDecimal.ZERO.compareTo(quota) == 0)
+  then
+   $output.setRejectCode("SMS0005");
+   $output.setRejectReason("决策完成但出0额度");
+   $output.setResult(Boolean.FALSE);
+   retract($output)
+end
+
+// 6.提现环节（首加再）的额度均需满足对应的最低的要求最低：2000元；
+rule "withdrawQuotaMatchTheGlobalRefuseRule"
+salience 500
+  when
+    $output:TeleAntiCheckOutput()
+    $input:TeleAntiCheckInput(stepNumber == currentStepNumber && stepNumber == 6 && greaterTwo(quota))
+  then
+    $output.setRejectCode("SMS0006");
+    $output.setRejectReason("提现环节（首加再）的额度均需满足对应的最低的要求最低：2000元");
+    $output.setResult(Boolean.FALSE);
+    retract($output)
+end
+
+// 7.剔除特殊渠道
+rule "specialChannelRefuseRule"
+salience 400
+  when
+    $output:TeleAntiCheckOutput()
+    $input:TeleAntiCheckInput(dataSources matches "wacai[\\s\\S]*" || specialChannelFilterDataSource contains dataSources)
+  then
+    $output.setRejectCode("SMS0007");
+    $output.setRejectReason("剔除特殊渠道");
+    $output.setResult(Boolean.FALSE);
+end
+
+
+// 8.收取前置费用
+rule "foreFeeRecvTagRefuseRule"
+salience 300
+  when
+    $output:TeleAntiCheckOutput()
+    $input:TeleAntiCheckInput(promoteSource == 2 && foreFeeRecvTag != "Y")
+  then
+    $output.setRejectCode("SMS0008");
+    $output.setRejectReason("无需收取前置费用");
+    $output.setResult(Boolean.FALSE);
+    retract($output)
+end

@@ -4,7 +4,7 @@ server:
 drools.kie:
   server:
     # 集群节点
-    nodes: 10.139.60.81:8180,10.139.60.81:8280
+    nodes: 10.139.60.81:8080
     # 超时时间
     timeout: 5s
     # 用户名（已加密）
@@ -23,7 +23,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 mybatis-plus:
-  type-aliases-package: com.wjpspace.droolstemplete.entity
+  type-aliases-package: com.vcredit.vmc.rules.dao.entity
   mapper-locations: "classpath:mappers/**/*Mapper.xml"
   configuration:
     map-underscore-to-camel-case: true

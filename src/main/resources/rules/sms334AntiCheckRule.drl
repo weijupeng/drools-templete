@@ -1,0 +1,27 @@
+package smsAntiCheckRule;
+import com.vcredit.vmc.rules.drools.input.SmsAntiCheckInput
+import com.vcredit.vmc.rules.drools.output.SmsAntiCheckOutput
+import com.vcredit.vmc.rules.drools.utils.DateUtils
+import java.util.Date
+
+salience 90
+
+function Boolean ifExpired(String str){
+    String now = DateUtils.dateToString(new Date(), DateUtils.DATE_PATTERN_YYYY_MM_DD_HH_MM_SS);
+    return now.compareTo(str) >= 0;
+}
+
+
+//提现环节（首加再）的额度已失效
+rule "creditExpireTimeRule"
+no-loop true
+  when
+   $output:SmsAntiCheckOutput()
+   $input:SmsAntiCheckInput(productCode == "shandai", stepNumber == currentStepNumber,
+                            currentStepNumber == 6, ifExpired(creditExpireTime))
+  then
+   $output.setRejectCode("SMS0009");
+   $output.setRejectReason("提现环节（首加再）的额度已失效");
+   $output.setResult(Boolean.FALSE);
+   retract($output)
+end

@@ -36,12 +36,12 @@ public class IdCardUtils {
     /**
      * 城市编码
      */
-    private static Map<String, String> cityCodes =new HashMap<String, String>() ;
+    private static Map<String, String> cityCodes = new HashMap<String, String>();
 
     /**
      * 台湾身份首字母对应数字
      */
-    private static Map<String, Integer> twFirstCode=new HashMap<String, Integer>();
+    private static Map<String, Integer> twFirstCode = new HashMap<String, Integer>();
 
     static {
         cityCodes.put("11", "北京市");

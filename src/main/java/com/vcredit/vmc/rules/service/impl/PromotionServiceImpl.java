@@ -18,11 +18,18 @@ import com.vcredit.vmc.rules.drools.output.SmsAntiCheckOutput;
 import com.vcredit.vmc.rules.drools.output.TeleAntiCheckOutput;
 import com.vcredit.vmc.rules.service.PromotionService;
 import lombok.extern.slf4j.Slf4j;
+import org.kie.api.KieServices;
+import org.kie.api.command.Command;
+import org.kie.api.command.KieCommands;
+import org.kie.api.runtime.ExecutionResults;
+import org.kie.api.runtime.StatelessKieSession;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -64,6 +71,34 @@ public class PromotionServiceImpl implements PromotionService {
 
     @Override
     public SmsAntiCheckOutput check2(SmsPromotionRuleInput input) {
+        SmsAntiCheckInput fact = initSmsInput(input);
+
+        SmsAntiCheckOutput output = new SmsAntiCheckOutput();
+
+//        KieSession kieSession = KieServices.Factory.get().getKieClasspathContainer().newKieSession(input.getKieSessionId());
+        KieServices kieServices = KieServices.Factory.get();
+        StatelessKieSession kieSession = kieServices.getKieClasspathContainer(input.getKieContainerId()).newStatelessKieSession(input.getKieSessionId());
+        KieCommands kieCommands = kieServices.getCommands();
+        List<Command> cmds = new ArrayList<Command>();
+        cmds.add(kieCommands.newInsert(fact, "fact"));
+        cmds.add(kieCommands.newInsert(output, "output"));
+        ExecutionResults results = kieSession.execute(kieCommands.newBatchExecution(cmds));
+
+//        System.out.println(results.getValue("output"));
+//        kieSession.execute(fact);
+//        kieSession.execute(output);
+//        kieSession.insert(fact);
+//        kieSession.insert(output);
+//        kieSession.fireAllRules();
+        System.out.println(fact);
+        System.out.println(output);
+        return output;
+
+
+//        return getSmsAntiCheckOutput(input, fact, output);
+    }
+
+    private SmsAntiCheckInput initSmsInput(SmsPromotionRuleInput input) {
         int stepOrdinal = BusinessStepEnum.valueOf(input.getStep()).ordinal();
         int currentOrdinal = BusinessStepEnum.valueOf(input.getCurrentStep()).ordinal();
         SmsAntiCheckInput fact = new SmsAntiCheckInput();
@@ -71,7 +106,10 @@ public class PromotionServiceImpl implements PromotionService {
         BeanUtils.copyProperties(input, fact);
         fact.setCurrentStepNumber(currentOrdinal);
         fact.setStepNumber(stepOrdinal);
+        return fact;
+    }
 
+    private SmsAntiCheckOutput getSmsAntiCheckOutput(SmsPromotionRuleInput input, SmsAntiCheckInput fact, SmsAntiCheckOutput output) {
         RuleParams ruleParam = RuleParamsBuilder.create(input.getKieContainerId(), input.getKieSessionId())
                 .setGlobal("specialChannelFilterDataSource", initSpecialChannelFilterDataSource())
                 .insert("input", fact)
@@ -84,8 +122,9 @@ public class PromotionServiceImpl implements PromotionService {
         if (ruleResult.isSuccess()) {
             SmsAntiCheckOutput checkOutput = ruleResult.getValue("output");
             return checkOutput;
+        } else {
+            return output;
         }
-        throw new RuntimeException(String.format("该条数据[%s]的规则处理失败", input));
     }
 
 
